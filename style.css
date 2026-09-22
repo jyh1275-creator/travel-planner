@@ -1109,9 +1109,13 @@ body.sidebar-collapsed .brand-block{
     margin:14px 0;
   }
 
-  /* 예약 화면의 빈 상태는 예약 추가 영역과 겹치지 않도록 별도 조정 */
-  .empty + .add-form{
-    margin-top:18px;
+  /* 예약 / 여행정보 빈 상태 박스 위치 통일 */
+  #reservationList .empty{
+    margin-top:32px;
+  }
+
+  #infoGrid .empty{
+    margin-top:14px;
   }
 
   .reservation-actions .file-label{
