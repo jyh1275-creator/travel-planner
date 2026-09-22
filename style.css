@@ -982,10 +982,11 @@ body.sidebar-collapsed .brand-block{
     min-width:0;
   }
 
-  .info-grid{
-    grid-template-columns:1fr;
-    gap:14px;
-  }
+.info-grid{
+  grid-template-columns:1fr;
+  gap:14px;
+  margin-top:0;
+}
 
   .info-card{
     min-height:0;
@@ -1107,15 +1108,6 @@ body.sidebar-collapsed .brand-block{
     font-size:13px;
     line-height:1.5;
     margin:14px 0;
-  }
-
-  /* 예약 / 여행정보 빈 상태 박스 위치 통일 */
-  #reservationList .empty{
-    margin-top:32px;
-  }
-
-  #infoGrid .empty{
-    margin-top:14px;
   }
 
   .reservation-actions .file-label{
