@@ -750,99 +750,271 @@ body.sidebar-collapsed .brand-block{
   margin-right:auto
 }
 
-/* 모바일 */
-@media(max-width:760px){
+/* 모바일
+   PC 레이아웃은 위 규칙을 그대로 유지하고, 760px 이하에서만 재배치한다.
+   특히 고정 폭 날짜 그리드가 모바일 전체 폭을 밀어내던 문제를 제거한다.
+*/
+@media (max-width:760px){
+
+  html,
+  body{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+  }
+
+  .app{
+    display:block;
+    width:100%;
+    min-height:100vh;
+  }
 
   aside{
     width:100%;
     height:auto;
-    position:static;
+    position:relative;
+    inset:auto;
     padding:13px;
     display:block;
     border-right:0;
-    border-bottom:1px solid var(--line)
+    border-bottom:1px solid var(--line);
   }
 
   .brand-block{
-    padding:0 4px 10px
+    padding:0 4px 10px;
   }
 
-  .side-region{margin-top:3px}
+  .side-region{
+    margin-top:3px;
+  }
 
   nav{
     display:flex;
-    overflow:auto
+    gap:5px;
+    width:100%;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+
+  nav::-webkit-scrollbar{
+    display:none;
   }
 
   .nav{
-    white-space:nowrap
+    flex:1 0 auto;
+    min-width:0;
+    white-space:nowrap;
+    justify-content:center;
+    padding:11px 10px;
   }
 
-  main{
+  .sidebar-toggle{
+    display:none;
+  }
+
+  main,
+  body.sidebar-collapsed main{
     margin-left:0;
     width:100%;
     max-width:none;
-    padding:22px 16px 50px
+    padding:22px 16px 50px;
   }
 
-  .trip-region-title{font-size:27px}
+  .trip-meta{
+    margin-bottom:6px;
+    letter-spacing:.8px;
+  }
+
+  h1,
+  .trip-region-title{
+    font-size:27px;
+  }
+
+  .trip-day-summary{
+    margin-top:5px;
+  }
 
   .day-panel{
-    padding:21px 16px
+    width:100%;
+    padding:21px 16px;
+    margin-top:25px;
+    border-radius:16px;
   }
 
-  /* 모바일에서도 7칸 달력 구조 유지 */
+  /*
+    모바일 날짜 영역:
+    기존의 repeat(7,64px) + 90px date-tab 조합은 실제로 7칸보다
+    넓은 가로 영역을 만들어 페이지 전체가 밀릴 수 있었다.
+    이제 항상 컨테이너 안에 7칸이 정확히 들어간다.
+  */
   .date-tabs{
-    grid-template-columns:repeat(7,64px);
-    justify-content:space-between;
-    column-gap:0;
-    row-gap:9px;
-    overflow-x:auto;
-    padding-bottom:3px
+    width:100%;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    justify-content:stretch;
+    column-gap:6px;
+    row-gap:8px;
+    overflow:visible;
+    padding:0;
+    margin-bottom:30px;
   }
 
   .date-tab,
   .date-tab-spacer{
-    width:90px;
-    min-width:90px
+    width:100%;
+    min-width:0;
+  }
+
+  .date-tab{
+    height:62px;
+    padding:6px 2px;
+    border-radius:11px;
+  }
+
+  .date-tab .num{
+    font-size:13px;
+  }
+
+  .date-tab .dow{
+    font-size:11px;
+    margin-top:5px;
   }
 
   .event{
-    grid-template-columns:47px 1fr;
-    gap:24px
+    grid-template-columns:43px minmax(0,1fr);
+    gap:20px;
   }
 
-  .event:before{left:71px}
+  .event:before{
+    left:63px;
+  }
 
-  .dot{left:66px}
+  .dot{
+    left:58px;
+  }
 
-  .time{font-size:11px}
+  .event .card{
+    margin-left:10px;
+    min-width:0;
+  }
+
+  .time{
+    font-size:11px;
+    padding-top:21px;
+    white-space:nowrap;
+  }
+
+  .card{
+    min-width:0;
+    padding:15px 14px;
+  }
+
+  .card-head{
+    min-width:0;
+  }
+
+  .title{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+
+  .details,
+  .travel-info{
+    overflow-wrap:anywhere;
+  }
 
   .add-form-grid,
   .form-grid{
-    grid-template-columns:1fr
+    grid-template-columns:1fr;
   }
 
   .form-grid .full,
   .add-form .full{
-    grid-column:auto
+    grid-column:auto;
+  }
+
+  .settings{
+    width:100%;
+    padding:21px 18px;
+  }
+
+  .settings label:not(.file-import){
+    gap:14px;
+  }
+
+  .form-actions{
+    flex-wrap:wrap;
   }
 
   .reservation-card{
     align-items:flex-start;
-    flex-direction:column
+    flex-direction:column;
+    padding:17px;
+  }
+
+  .reservation-main{
+    min-width:0;
+  }
+
+  .reservation-main h3{
+    overflow-wrap:anywhere;
   }
 
   .reservation-actions{
-    width:100%
+    width:100%;
   }
 
   .reservation-actions .ghost{
-    flex:1
+    flex:1;
+    min-width:0;
   }
 
   .info-grid{
-    grid-template-columns:1fr
+    grid-template-columns:1fr;
+    gap:14px;
+  }
+
+  .info-card{
+    min-height:0;
+    padding:19px;
+  }
+
+  .modal{
+    padding:12px;
+    align-items:flex-start;
+  }
+
+  .modal-box{
+    width:100%;
+    max-height:calc(100dvh - 24px);
+    padding:21px 17px;
+    border-radius:15px;
+  }
+
+  .modal-box h2{
+    margin-right:35px;
+    overflow-wrap:anywhere;
+  }
+
+  .ticket-preview iframe{
+    height:min(65dvh,520px);
+  }
+
+  .ticket-preview img{
+    max-width:100%;
+    max-height:65dvh;
+  }
+
+  .data-actions{
+    flex-direction:column;
+  }
+
+  .data-actions .primary,
+  .data-actions .file-import{
+    width:100%;
+    justify-content:center;
+    text-align:center;
   }
 }
 

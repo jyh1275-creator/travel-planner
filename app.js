@@ -1,5 +1,16 @@
 const DEFAULT_TYPE={식사:"🍴",관광:"📍",쇼핑:"🛍️",예약:"🎫",숙소:"🏨",이동:"🚶",주요이동:"✈️"};
-let TYPE={...DEFAULT_TYPE,...JSON.parse(localStorage.getItem("travelTypeEmoji")||"{}")};
+
+function readJSON(key,fallback){
+  try{
+    const raw=localStorage.getItem(key);
+    return raw===null||raw===""?fallback:JSON.parse(raw);
+  }catch(error){
+    console.warn(`저장 데이터 읽기 실패: ${key}`,error);
+    return fallback;
+  }
+}
+
+let TYPE={...DEFAULT_TYPE,...readJSON("travelTypeEmoji",{})};
 
 const SAMPLE=[
 {날짜:"2026-10-08",시간:"01:00",일정:"인천공항 → 히드로 공항",장소:"히드로 공항",유형:"주요이동",세부사항:"대한항공 KE907 / 런던 도착 12:45"},
@@ -9,11 +20,13 @@ const SAMPLE=[
 {날짜:"2026-10-08",시간:"19:25",일정:"소호 저녁",장소:"Soho",유형:"식사",세부사항:"저녁 식사"}
 ];
 
-let data=JSON.parse(localStorage.getItem("travelData")||"null")||SAMPLE;
+
+
+let data=readJSON("travelData",null)||SAMPLE;
 let selectedDate=null;
-let trip=JSON.parse(localStorage.getItem("travelTrip")||"null")||{start:"2026-10-08",end:"2026-10-18",region:"London · Portugal"};
-let reservations=JSON.parse(localStorage.getItem("travelReservations")||"[]");
-let infoItems=JSON.parse(localStorage.getItem("travelInfoItems")||"null");
+let trip=readJSON("travelTrip",null)||{start:"2026-10-08",end:"2026-10-18",region:"London · Portugal"};
+let reservations=readJSON("travelReservations",[]);
+let infoItems=readJSON("travelInfoItems",null);
 
 if(!infoItems){
   const old=JSON.parse(localStorage.getItem("travelInfo")||"null")||{};
@@ -24,6 +37,7 @@ if(!infoItems){
     description:"",
     details
   }));
+  saveInfoItems();
 }
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({
@@ -757,13 +771,30 @@ async function showReservation(id){
   modal.classList.remove("hidden");
 }
 
-document.querySelector("#closeModal").onclick=()=>
-  document.querySelector("#reservationModal")
-    .classList.add("hidden");
+document.querySelector("#closeModal").onclick=()=>{
+  const modal=document.querySelector("#reservationModal");
+  modal.classList.add("hidden");
+
+  const preview=document.querySelector("#ticketPreview");
+  const iframe=preview.querySelector("iframe");
+  const img=preview.querySelector("img");
+
+  if(iframe?.src?.startsWith("blob:")) URL.revokeObjectURL(iframe.src);
+  if(img?.src?.startsWith("blob:")) URL.revokeObjectURL(img.src);
+};
 
 document.querySelector("#reservationModal").onclick=e=>{
-  if(e.target.id==="reservationModal")
-    e.currentTarget.classList.add("hidden");
+  if(e.target.id==="reservationModal"){
+    const modal=e.currentTarget;
+    const preview=document.querySelector("#ticketPreview");
+    const iframe=preview.querySelector("iframe");
+    const img=preview.querySelector("img");
+
+    if(iframe?.src?.startsWith("blob:")) URL.revokeObjectURL(iframe.src);
+    if(img?.src?.startsWith("blob:")) URL.revokeObjectURL(img.src);
+
+    modal.classList.add("hidden");
+  }
 };
 
 /* 유형별 이모지 설정 */
@@ -1299,6 +1330,12 @@ document.querySelector("#importAllData").onchange=async e=>{
 
   if(!file) return;
 
+  if(!/\.zip$/i.test(file.name) && file.type!=="application/zip"){
+    alert("Travel Planner에서 내보낸 .zip 데이터 파일을 선택해주세요.");
+    e.target.value="";
+    return;
+  }
+
   const confirmed=confirm(
     "현재 앱에 저장된 전체 데이터가 가져온 파일의 내용으로 교체됩니다.\n\n"+
     "계속하시겠습니까?"
@@ -1331,6 +1368,10 @@ document.querySelector("#importAllData").onchange=async e=>{
     const wb=XLSX.read(excelArray,{
       type:"array"
     });
+
+    if(!wb.Sheets["일정"] && !wb.Sheets["예약"] && !wb.Sheets["여행정보"]){
+      throw new Error("백업 파일의 데이터 시트를 찾을 수 없습니다.");
+    }
 
 
     /* 일정 */
