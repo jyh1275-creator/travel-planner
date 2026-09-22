@@ -788,26 +788,34 @@ body.sidebar-collapsed .brand-block{
     margin-top:3px;
   }
 
+  /* 모바일 상단 탭 */
   nav{
-    display:flex;
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
     gap:5px;
     width:100%;
-    overflow-x:auto;
-    overflow-y:hidden;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-  }
-
-  nav::-webkit-scrollbar{
-    display:none;
+    overflow:visible;
   }
 
   .nav{
-    flex:1 0 auto;
+    width:100%;
     min-width:0;
     white-space:nowrap;
     justify-content:center;
-    padding:11px 10px;
+    text-align:center;
+    gap:5px;
+    padding:11px 4px;
+  }
+
+  .nav span{
+    width:auto;
+    min-width:0;
+  }
+
+  .nav .nav-label{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:clamp(11px,3.1vw,14px);
   }
 
   .sidebar-toggle{
@@ -880,24 +888,28 @@ body.sidebar-collapsed .brand-block{
     font-size:11px;
     margin-top:5px;
   }
+    
 
-  .event{
-    grid-template-columns:43px minmax(0,1fr);
-    gap:20px;
-  }
+   
+  /* 모바일 일정 - 시간/막대바를 왼쪽으로 */
+/* 모바일 일정 - 시간/막대바를 왼쪽으로, 카드와는 여백 유지 */
+.event{
+  grid-template-columns:36px minmax(0,1fr);
+  gap:18px;
+}
 
-  .event:before{
-    left:63px;
-  }
+.event:before{
+  left:48px;
+}
 
-  .dot{
-    left:58px;
-  }
+.dot{
+  left:43px;
+}
 
-  .event .card{
-    margin-left:10px;
-    min-width:0;
-  }
+.event .card{
+  margin-left:4px;
+  min-width:0;
+}
 
   .time{
     font-size:11px;
@@ -1016,6 +1028,12 @@ body.sidebar-collapsed .brand-block{
     justify-content:center;
     text-align:center;
   }
+    .reservation-actions .file-label{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+  }
 }
 
 /* 기존 일정 카드 스타일 유지 */
@@ -1076,5 +1094,16 @@ body.sidebar-collapsed .brand-block{
     width:100%;
     justify-content:center;
   }
+/* 모바일 빈 상태 박스 */
+.empty{
+  min-height:110px;
+  padding:28px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:14px;
+  line-height:1.5;
+}
 
 }
