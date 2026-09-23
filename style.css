@@ -310,18 +310,23 @@ h1{
 }
 
 .travel-info{
-  margin-top:13px;
+  margin:0;
   padding:11px 13px;
   border-radius:10px;
   background:#fff;
   font-size:12px;
-  line-height:1.65
+  line-height:1.65;
+  margin-top:13px
+}
+
+.card-extra > .travel-info + .travel-info{
+  margin-top:13px
 }
 
 .travel-label{
   font-weight:600;
   color:var(--accent);
-  margin-bottom:4px
+  margin-bottom:0px
 }
 
 .main-travel .card{
@@ -988,6 +993,10 @@ body.sidebar-collapsed .brand-block{
   margin-top:0;
 }
 
+.info-grid:has(.info-card){
+  margin-top:14px;
+}
+
   .info-card{
     min-height:0;
     padding:19px;
@@ -1039,8 +1048,12 @@ body.sidebar-collapsed .brand-block{
 
 /* 기존 일정 카드 스타일 유지 */
 .main-travel .card{
-  background:#fff!important;
-  border-left:1px solid var(--line)!important
+  border-left:1px solid var(--line)
+}
+
+.event.expanded.main-travel .card{
+  background:var(--soft);
+  border-color:var(--accent)
 }
 
 .date-tab.active{
@@ -1056,6 +1069,39 @@ body.sidebar-collapsed .brand-block{
 
 #deleteReservation{
   align-self:flex-end;
+}
+
+
+/* PC 일정/여행정보 빈 상태 박스 크기: 기존 확대 상태 유지 */
+@media(min-width:761px){
+  .empty{
+    min-height:160px;
+    padding:32px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    line-height:1.5;
+  }
+}
+
+/* PC 예약 빈 상태: 예약 추가 버튼과 너무 붙지 않도록 위치만 조정 */
+#reservationList > .empty{
+  min-height:160px;
+  padding:32px 24px;
+  margin-top:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.5;
+}
+
+.reservation-modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:14px;
 }
 
 /* 데이터 관리 */
@@ -1115,6 +1161,20 @@ body.sidebar-collapsed .brand-block{
     align-items:center;
     justify-content:center;
     text-align:center;
+  }
+
+  #reservationList > .empty{
+    min-height:100px;
+    padding:24px 18px;
+    margin:14px 0;
+  }
+
+  .reservation-modal-actions{
+    width:100%;
+  }
+
+  .reservation-modal-actions .ghost{
+    flex:1;
   }
 
 }

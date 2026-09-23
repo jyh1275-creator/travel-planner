@@ -1,4 +1,4 @@
-const DEFAULT_TYPE={식사:"🍴",관광:"📍",쇼핑:"🛍️",예약:"🎫",숙소:"🏨",이동:"🚶",주요이동:"✈️"};
+const DEFAULT_TYPE={식사:"🍴",관광:"🪂",쇼핑:"🛍️",예약:"🎫",숙소:"🏨",이동:"🚶",주요이동:"✈️"};
 
 function readJSON(key,fallback){
   try{
@@ -13,18 +13,18 @@ function readJSON(key,fallback){
 let TYPE={...DEFAULT_TYPE,...readJSON("travelTypeEmoji",{})};
 
 const SAMPLE=[
-{날짜:"2026-10-08",시간:"01:00",일정:"인천공항 → 히드로 공항",장소:"히드로 공항",유형:"주요이동",세부사항:"대한항공 KE907 / 런던 도착 12:45"},
-{날짜:"2026-10-08",시간:"12:45",일정:"히드로 공항 → 에지웨어 숙소",장소:"Edgware",유형:"주요이동",세부사항:"Elizabeth Line → Tottenham Court Road역(Northern Line 환승) → Edgware역"},
-{날짜:"2026-10-08",시간:"16:20",일정:"버킹엄 궁전",장소:"London",유형:"관광",세부사항:"■외관과 첨문은 24시간 무료 개방"},
-{날짜:"2026-10-08",시간:"17:00",일정:"세인트 제임스 파크",장소:"London",유형:"관광",세부사항:"공원 산책"},
-{날짜:"2026-10-08",시간:"19:25",일정:"소호 저녁",장소:"Soho",유형:"식사",세부사항:"저녁 식사"}
+{날짜:"2026-10-08",시간:"01:00",일정:"인천공항 → 샘플 공항",유형:"주요이동",세부사항:"주요이동은 단독된 박스로 표시됩니다"},
+{날짜:"2026-10-08",시간:"12:45",일정:"샘플 공항 → 관광 명소",유형:"이동",세부사항:"지하철 00분 / 000역 → 000역(000 환승)"},
+{날짜:"2026-10-08",시간:"16:20",일정:"관광 명소",유형:"관광",세부사항:"관광지에 대한 정보를 입력해주세요"},
+{날짜:"2026-10-08",시간:"17:00",일정:"쇼핑 명소",유형:"쇼핑",세부사항:"쇼핑에 대한 정보를 입력해주세요"},
+{날짜:"2026-10-08",시간:"19:25",일정:"식당",유형:"식사",세부사항:"식사에 대한 정보를 입력해주세요"}
 ];
 
 
 
 let data=readJSON("travelData",null)||SAMPLE;
 let selectedDate=null;
-let trip=readJSON("travelTrip",null)||{start:"2026-10-08",end:"2026-10-18",region:"London · Portugal"};
+let trip=readJSON("travelTrip",null)||{start:"2026-10-08",end:"2026-10-18",region:"SAMPLE"};
 let reservations=readJSON("travelReservations",[]);
 let infoItems=readJSON("travelInfoItems",null);
 
@@ -108,7 +108,7 @@ function dayNo(d){
 }
 
 function rowId(r){
-  return [r.날짜,r.시간,r.일정,r.장소].join("||");
+  return [r.날짜,r.시간,r.일정].join("||");
 }
 
 function allDates(){
@@ -204,37 +204,79 @@ function render(){
 
   const rows=data
     .filter(x=>normalizeDate(x.날짜)===selectedDate)
-    .sort((a,b)=>(a.시간||"").localeCompare(b.시간||""));
+    .map((x,index)=>({...x,__order:index}))
+    .sort((a,b)=>{
+      const toMinutes=value=>{
+        const m=String(value||"").trim().match(/^(\d{1,2}):(\d{2})/);
+        return m ? Number(m[1])*60+Number(m[2]) : Number.POSITIVE_INFINITY;
+      };
+      const at=toMinutes(a.시간);
+      const bt=toMinutes(b.시간);
+      return at-bt || a.__order-b.__order;
+    });
 
   let html="";
+  let pendingMoves=[];
 
-  rows.forEach((r,i)=>{
-    if(r.유형==="이동")return;
+  const renderTravelInfo=move=>`
+    <div class="travel-info">
+      <div class="travel-label">${esc(TYPE["이동"]||"🚶")} 이동 정보</div>
+      <b>${esc(String(move.일정||"").trim())}</b><br>${esc(String(move.세부사항||"").replace(/^○\s*/,"").trim())}
+    </div>`;
 
-    const prev=i>0&&rows[i-1].유형==="이동"?rows[i-1]:null;
+  rows.forEach((r,index)=>{
+    const type=String(r.유형||"").trim();
+
+    // 날짜의 마지막 이동은 독립적인 주요이동으로 표시한다.
+    if(type==="이동" && index===rows.length-1){
+      const mainMove={...r,유형:"주요이동"};
+      html+=`
+        <article class="event main-travel" data-id="${esc(rowId(r))}">
+          <div class="time">${esc(r.시간)}</div>
+          <div class="dot"></div>
+          <div class="card">
+            <div class="card-head">
+              <span class="icon">${esc(TYPE["주요이동"]||"✈️")}</span>
+              <span class="title">${esc(mainMove.일정)}</span>
+              <span class="chevron">⌄</span>
+            </div>
+            <div class="type-pill">주요이동</div>
+            <div class="card-extra">
+              ${mainMove.세부사항?`<div class="details">${esc(mainMove.세부사항)}</div>`:""}
+            </div>
+          </div>
+        </article>`;
+      return;
+    }
+
+    if(type==="이동"){
+      pendingMoves.push(r);
+      return;
+    }
+
+    const travelHtml=pendingMoves.map(renderTravelInfo).join("");
+    pendingMoves=[];
 
     html+=`
       <article class="event" data-id="${esc(rowId(r))}">
         <div class="time">${esc(r.시간)}</div>
         <div class="dot"></div>
-
         <div class="card">
           <div class="card-head">
-            <span class="icon">${esc(TYPE[r.유형]||"📌")}</span>
+            <span class="icon">${esc(TYPE[type]||"📌")}</span>
             <span class="title">${esc(r.일정)}</span>
             <span class="chevron">⌄</span>
           </div>
-
-          <div class="type-pill">${esc(r.유형)}</div>
-
-<div class="card-extra">
-  ${prev?`<div class="travel-info"><div class="travel-label">${esc(TYPE["이동"]||"🚶")} 이동 정보</div><b>${esc(prev.일정)}</b><br>${esc(String(prev.세부사항||"").replace(/^○\s*/,""))}</div>`:""}
-  ${r.세부사항?`<div class="details">${esc(r.세부사항)}</div>`:""}
-</div>
+          <div class="type-pill">${esc(type)}</div>
+          <div class="card-extra">
+            ${travelHtml}
+            ${r.세부사항?`<div class="details">${esc(r.세부사항)}</div>`:""}
+          </div>
         </div>
-      </article>
-    `;
+      </article>`;
   });
+
+  // 마지막 이동이 이미 주요이동으로 처리되었으므로 여기에는 남은 이동이 없다.
 
   document.querySelector("#timeline").innerHTML=
     html||'<div class="empty">이 날짜에 등록된 일정이 없습니다.</div>';
@@ -346,7 +388,6 @@ document.querySelector("#excelInput").onchange=e=>{
           날짜:normalizeDate(x.날짜),
           시간:normalizeTime(x.시간),
           일정:String(x.일정).trim(),
-          장소:String(x.장소).trim(),
           유형:String(x.유형).trim(),
           세부사항:String(x.세부사항).trim()
         }))
@@ -544,7 +585,7 @@ function renderReservations(){
         await saveAttachment(e.target.dataset.id,f);
 
         alert(
-          "티켓/예약 파일을 저장했습니다. ‘예약 보기’에서 확인할 수 있어요."
+          "티켓/예약 파일을 저장했습니다. ‘예약 보기’에서 확인할 수 있습니다."
         );
       }
       catch(err){
@@ -678,6 +719,37 @@ async function deleteAttachment(id){
 }
 
 
+function editReservation(id){
+  const r=reservations.find(x=>x.id===id);
+  if(!r)return;
+
+  reservationForm();
+  document.querySelector("#reservationForm").classList.remove("hidden");
+  document.querySelector("#resTitle").value=r.title||"";
+  document.querySelector("#resDate").value=r.date||"";
+  document.querySelector("#resTime").value=r.time||"";
+  document.querySelector("#resType").value=r.type||"";
+  document.querySelector("#resDetails").value=r.details||"";
+
+  const saveBtn=document.querySelector("#saveRes");
+  saveBtn.textContent="예약 수정";
+  saveBtn.onclick=()=>{
+    const title=document.querySelector("#resTitle").value.trim();
+    const date=document.querySelector("#resDate").value;
+    if(!title||!date){alert("예약명과 날짜를 입력해주세요.");return;}
+    r.title=title;
+    r.date=date;
+    r.time=document.querySelector("#resTime").value;
+    r.type=document.querySelector("#resType").value;
+    r.details=document.querySelector("#resDetails").value.trim();
+    saveReservations();
+    document.querySelector("#reservationForm").classList.add("hidden");
+    renderReservations();
+  };
+
+  document.querySelector("#reservationModal").classList.add("hidden");
+}
+
 async function showReservation(id){
   const r=reservationRows().find(x=>x.id===id);
   if(!r)return;
@@ -726,22 +798,20 @@ async function showReservation(id){
   }
 
 
-  // 예약 삭제 버튼
-  let deleteBtn=
-    document.querySelector("#deleteReservation");
-
-  if(!deleteBtn){
-    deleteBtn=document.createElement("button");
-
-    deleteBtn.id="deleteReservation";
-    deleteBtn.className="ghost";
-    deleteBtn.textContent="예약 삭제";
-
-    document
-      .querySelector("#reservationModal .modal-box")
-      .appendChild(deleteBtn);
+  // 예약 수정 / 삭제 버튼
+  const modalBox=document.querySelector("#reservationModal .modal-box");
+  let actionBox=document.querySelector("#reservationModal .reservation-modal-actions");
+  if(!actionBox){
+    actionBox=document.createElement("div");
+    actionBox.className="reservation-modal-actions";
+    modalBox.appendChild(actionBox);
   }
+  actionBox.innerHTML=`
+    <button id="editReservation" class="ghost">예약 수정</button>
+    <button id="deleteReservation" class="ghost">예약 삭제</button>`;
 
+  document.querySelector("#editReservation").onclick=()=>editReservation(id);
+  const deleteBtn=document.querySelector("#deleteReservation");
 
   deleteBtn.onclick=async()=>{
     if(!confirm("이 예약을 삭제할까요?"))return;
@@ -1050,10 +1120,12 @@ document.querySelector("#resetColors").onclick=()=>{
 
 document.querySelector("#downloadSample").onclick=()=>{
   const rows=[
-    ["날짜","시간","일정","장소","유형","세부사항"],
-    ["2026-10-17","12:15","타임아웃 마켓 점심","타임아웃 마켓","식사","Time Out Market"],
-    ["2026-10-17","13:30","타임아웃 마켓 → 아우구스타 거리","아우구스타 거리","이동","약 1.1km / 약 16분"],
-    ["2026-10-17","13:45","아우구스타 거리","아우구스타 거리","관광","리스본 대표 보행자 거리 산책"]
+    ["날짜","시간","일정","유형","세부사항"],
+    ["2026-10-08","01:00","인천공항 → 샘플 공항","주요이동","주요이동은 단독된 박스로 표시됩니다"],
+    ["2026-10-08","12:45","샘플 공항 → 관광 명소","이동","이동 정보는 다음 일정 카드에 함께 표시됩니다"],
+    ["2026-10-08","16:20","관광 명소","관광","관광지에 대한 정보를 입력해주세요"],
+    ["2026-10-08","17:00","쇼핑 명소","쇼핑","쇼핑에 대한 정보를 입력해주세요"],
+    ["2026-10-08","19:25","식당","식사","식사에 대한 정보를 입력해주세요"]
   ];
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
@@ -1151,12 +1223,11 @@ document.querySelector("#exportAllData").onclick=async()=>{
 
     /* 일정 */
     const itineraryRows=[
-      ["날짜","시간","일정","장소","유형","세부사항"],
+      ["날짜","시간","일정","유형","세부사항"],
       ...data.map(item=>[
         item.날짜||"",
         item.시간||"",
         item.일정||"",
-        item.장소||"",
         item.유형||"",
         item.세부사항||""
       ])
@@ -1390,7 +1461,6 @@ document.querySelector("#importAllData").onchange=async e=>{
         날짜:String(row.날짜||""),
         시간:String(row.시간||""),
         일정:String(row.일정||""),
-        장소:String(row.장소||""),
         유형:String(row.유형||""),
         세부사항:String(row.세부사항||"")
       }));
