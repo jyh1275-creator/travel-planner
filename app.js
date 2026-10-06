@@ -750,6 +750,93 @@ function editReservation(id){
   document.querySelector("#reservationModal").classList.add("hidden");
 }
 
+let pdfJsPromise=null;
+
+function loadPdfJs(){
+  if(window.pdfjsLib){
+    return Promise.resolve(window.pdfjsLib);
+  }
+
+  if(pdfJsPromise){
+    return pdfJsPromise;
+  }
+
+  pdfJsPromise=new Promise((resolve,reject)=>{
+    const script=document.createElement("script");
+
+    script.src=
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+
+    script.onload=()=>{
+      if(!window.pdfjsLib){
+        reject(new Error("PDF.js를 불러오지 못했습니다."));
+        return;
+      }
+
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc=
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+      resolve(window.pdfjsLib);
+    };
+
+    script.onerror=()=>{
+      reject(new Error("PDF 뷰어를 불러오지 못했습니다."));
+    };
+
+    document.head.appendChild(script);
+  });
+
+  return pdfJsPromise;
+}
+
+async function renderPdfAttachment(blob,container){
+  const pdfjsLib=await loadPdfJs();
+  const buffer=await blob.arrayBuffer();
+
+  const pdf=await pdfjsLib.getDocument({
+    data:buffer
+  }).promise;
+
+  const viewer=container.querySelector(".pdf-viewer");
+  if(!viewer)return;
+
+  viewer.innerHTML="";
+
+  for(let pageNumber=1;pageNumber<=pdf.numPages;pageNumber++){
+    const page=await pdf.getPage(pageNumber);
+    const baseViewport=page.getViewport({scale:1});
+
+    const availableWidth=Math.max(
+      viewer.clientWidth-20,
+      280
+    );
+
+    const scale=availableWidth/baseViewport.width;
+    const viewport=page.getViewport({scale});
+
+    const canvas=document.createElement("canvas");
+    const context=canvas.getContext("2d");
+    const pixelRatio=Math.min(window.devicePixelRatio||1,2);
+
+    canvas.width=Math.floor(viewport.width*pixelRatio);
+    canvas.height=Math.floor(viewport.height*pixelRatio);
+    canvas.style.width=`${Math.floor(viewport.width)}px`;
+    canvas.style.height=`${Math.floor(viewport.height)}px`;
+    canvas.className="pdf-page";
+
+    context.setTransform(
+      pixelRatio,0,0,pixelRatio,0,0
+    );
+
+    viewer.appendChild(canvas);
+
+    await page.render({
+      canvasContext:context,
+      viewport
+    }).promise;
+  }
+}
+
 async function showReservation(id){
   const r=reservationRows().find(x=>x.id===id);
   if(!r)return;
@@ -774,35 +861,49 @@ async function showReservation(id){
     r.details||"";
 
   preview.innerHTML="";
+  delete preview.dataset.objectUrl;
+
+  // 모달을 먼저 열어 PDF 렌더링 시 실제 모바일 화면 너비를 계산한다.
+  modal.classList.remove("hidden");
 
   if(att){
-    const url=URL.createObjectURL(att.blob);
+    ticketName.textContent=att.name;
 
     if(
       att.type==="application/pdf"||
       /\.pdf$/i.test(att.name)
     ){
       preview.innerHTML=`
-        <div class="pdf-preview">
-          <div class="pdf-icon">PDF</div>
-          <div class="pdf-filename">${esc(att.name)}</div>
-          <a
-            class="pdf-open"
-            href="${url}"
-            target="_blank"
-            rel="noopener"
-          >
-            열기
-          </a>
+        <div class="pdf-viewer">
+          <div class="pdf-loading">PDF 불러오는 중...</div>
         </div>
       `;
+
+      try{
+        await renderPdfAttachment(
+          att.blob,
+          preview
+        );
+      }
+      catch(error){
+        console.error("PDF 표시 실패:",error);
+
+        preview.innerHTML=`
+          <div class="pdf-error">
+            PDF를 화면에 표시할 수 없습니다.<br>
+            <span>${esc(att.name)}</span>
+          </div>
+        `;
+      }
     }
     else{
+      const url=URL.createObjectURL(att.blob);
+
       preview.innerHTML=
         `<img src="${url}" alt="${esc(att.name)}">`;
-    }
 
-    ticketName.textContent=att.name;
+      preview.dataset.objectUrl=url;
+    }
   }
   else{
     ticketName.textContent=
@@ -847,35 +948,27 @@ async function showReservation(id){
 
     renderReservations();
   };
-
-
-  // 모달 열기
-  modal.classList.remove("hidden");
 }
 
-document.querySelector("#closeModal").onclick=()=>{
+function closeReservationModal(){
   const modal=document.querySelector("#reservationModal");
-  modal.classList.add("hidden");
-
   const preview=document.querySelector("#ticketPreview");
-  const iframe=preview.querySelector("iframe");
-  const img=preview.querySelector("img");
+  const objectUrl=preview.dataset.objectUrl;
 
-  if(iframe?.src?.startsWith("blob:")) URL.revokeObjectURL(iframe.src);
-  if(img?.src?.startsWith("blob:")) URL.revokeObjectURL(img.src);
-};
+  if(objectUrl){
+    URL.revokeObjectURL(objectUrl);
+    delete preview.dataset.objectUrl;
+  }
+
+  preview.innerHTML="";
+  modal.classList.add("hidden");
+}
+
+document.querySelector("#closeModal").onclick=closeReservationModal;
 
 document.querySelector("#reservationModal").onclick=e=>{
   if(e.target.id==="reservationModal"){
-    const modal=e.currentTarget;
-    const preview=document.querySelector("#ticketPreview");
-    const iframe=preview.querySelector("iframe");
-    const img=preview.querySelector("img");
-
-    if(iframe?.src?.startsWith("blob:")) URL.revokeObjectURL(iframe.src);
-    if(img?.src?.startsWith("blob:")) URL.revokeObjectURL(img.src);
-
-    modal.classList.add("hidden");
+    closeReservationModal();
   }
 };
 
