@@ -782,8 +782,20 @@ async function showReservation(id){
       att.type==="application/pdf"||
       /\.pdf$/i.test(att.name)
     ){
-      preview.innerHTML=
-        `<iframe src="${url}" title="${esc(att.name)}"></iframe>`;
+      preview.innerHTML=`
+        <div class="pdf-preview">
+          <div class="pdf-icon">PDF</div>
+          <div class="pdf-filename">${esc(att.name)}</div>
+          <a
+            class="pdf-open"
+            href="${url}"
+            target="_blank"
+            rel="noopener"
+          >
+            열기
+          </a>
+        </div>
+      `;
     }
     else{
       preview.innerHTML=

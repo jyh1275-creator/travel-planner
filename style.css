@@ -1178,3 +1178,50 @@ body.sidebar-collapsed .brand-block{
   }
 
 }
+
+
+.pdf-preview{
+  width:100%;
+  min-height:260px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  padding:30px 20px;
+}
+
+.pdf-icon{
+  width:44px;
+  height:44px;
+  border-radius:7px;
+  background:#ddd;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  font-weight:700;
+}
+
+.pdf-filename{
+  max-width:100%;
+  text-align:center;
+  font-size:13px;
+  color:#555;
+  overflow-wrap:anywhere;
+}
+
+.pdf-open{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:min(310px,100%);
+  min-height:58px;
+  border-radius:30px;
+  background:#287be5;
+  color:#fff;
+  text-decoration:none;
+  font-size:16px;
+  font-weight:600;
+}
